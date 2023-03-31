@@ -273,6 +273,9 @@ class ElasticSearchConn(object):
         size = queryparams.get("length", default=100, type=int)
         event_type = queryparams.get("event_type", default="*", type=str)
 
+        if event_type == "all":
+            event_type = '*'
+
         brief = queryparams.get("brief")
         debug = queryparams.get("debug")
         full = queryparams.get("full")
@@ -294,13 +297,20 @@ class ElasticSearchConn(object):
         ret = {"data": [], "draw": None,
                 "recordsFiltered": 0, "recordsTotal": 0}
 
+        # recordsFiltered has never been correct (or at least it is
+        # a misnomer), so I'm just setting it to 0 for now and we
+        # can figure out how to implement later if necessary
         ret['recordsTotal'] = results['hits']['total']['value']
-        print(results['hits'])
+
         for num, doc in enumerate(results['hits']['hits']):
             if full is not None:
                 d = doc['_source']
                 d['_esid'] = doc['_index']
             else:
+                # some event details are not required by the UI and can
+                # massively increase the response size, so we'll filter
+                # those details out unless the user specifically requests
+                # them using the `full` parameter
                 d = remove_extra_event_detail(doc['_source'])
 
             ret['data'].append(d)
