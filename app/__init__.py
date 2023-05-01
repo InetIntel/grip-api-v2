@@ -32,7 +32,12 @@
 # HEREUNDER IS ON AN "AS IS" BASIS, AND  GEORGIA TECH RESEARCH CORPORATION HAS
 # NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR
 # MODIFICATIONS.
-
+#
+# This source code is part of the GRIP software. The original GRIP software is
+# Copyright (c) 2015 The Regents of the University of California. All rights
+# reserved. Permission to copy, modify, and distribute this software for
+# academic research and education purposes is subject to the conditions and
+# copyright notices in the source code files and in the included LICENSE file.
 import os
 import toml
 
