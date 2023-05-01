@@ -9,22 +9,29 @@ Deployment instructions for development
 
 1. Create a python virtual environment (install python3-venv first, if
    necessary):
-     python3 -m venv grip-api-dev
+```
+    python3 -m venv grip-api-dev
+```
 
 2. Activate the virtual environment:
 
+```
      source ./grip-api-dev/bin/activate
+```
 
 3. Install dependencies:
 
+```
      pip3 install flask elasticsearch toml requests
+```
 
 4. Start development server:
-
+```
      export FLASK_ENV=development
      flask run
+```
 
-You should now have a local server running on localhost:5000 that you can
+You should now have a local server running on `localhost:5000` that you can
 issue GET requests to.
 
 
