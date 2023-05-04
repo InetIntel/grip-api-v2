@@ -74,6 +74,9 @@ def json_blacklist():
 def json_blocklist():
     r = requests.get(current_app.config['META_SERVICE'] + "/blacklist")
     data = json.loads(r.content.decode('utf-8'))
+    # rename blacklist to blocklist because that's what the caller will expect
+    data['blocklist'] = data.pop('blacklist')
+
     return post_process(data)
 
 @bp.route('/event/id/<evid>', methods=['GET'])
