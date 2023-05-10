@@ -245,6 +245,15 @@ def buildESEventQuery(queryparams):
         }
     }
 
+def add_high_level_pfx_event_tags(dest, pfxevent):
+    if "details" in pfxevent and "prefix" in pfxevent['details']:
+        dest['prefix'] = pfxevent['details']['prefix']
+    if "details" in pfxevent and "sub_pfx" in pfxevent['details']:
+        dest['sub_pfx'] = pfxevent['details']['sub_pfx']
+    if "details" in pfxevent and "super_pfx" in pfxevent['details']:
+        dest['super_pfx'] = pfxevent['details']['super_pfx']
+
+    return dest
 
 def remove_extra_pfx_event_detail(pfxevent):
     pfx = {}
@@ -252,14 +261,14 @@ def remove_extra_pfx_event_detail(pfxevent):
          if k in ['tags', 'finished_ts', 'inferences']:
              pfx[k] = v
 
-    if "details" in pfxevent and "prefix" in pfxevent['details']:
-        pfx['prefix'] = pfxevent['details']['prefix']
-    if "details" in pfxevent and "sub_pfx" in pfxevent['details']:
-        pfx['sub_pfx'] = pfxevent['details']['sub_pfx']
-    if "details" in pfxevent and "super_pfx" in pfxevent['details']:
-        pfx['super_pfx'] = pfxevent['details']['super_pfx']
-
+    pfx = add_high_level_pfx_event_tags(pfx, pfxevent)
     return pfx
+
+def enhance_pfxevents_for_event(event):
+    for pfxev in event['pfx_events']:
+        x = add_high_level_pfx_event_tags(pfxev, pfxev)
+
+    return event
 
 def remove_extra_event_detail(event):
 
@@ -305,7 +314,8 @@ class ElasticSearchConn(object):
         indexname = "observatory-v4-events-{}-{}".format(
                 evtype, datestr)
         result = self.es.get(index=indexname, id=evid)
-        return result['_source']
+        event = enhance_pfxevents_for_event(result['_source'])
+        return event
 
     def lookupEvents(self, queryparams):
 
