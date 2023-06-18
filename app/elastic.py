@@ -311,7 +311,7 @@ class ElasticSearchConn(object):
         except:
             return {'error': "Invalid timestamp in event ID -- should be a unix timestamp"}
 
-        indexname = "observatory-v4-events-{}-{}".format(
+        indexname = "observatory-v4-query-events-{}-{}".format(
                 evtype, datestr)
         result = self.es.get(index=indexname, id=evid)
         event = enhance_pfxevents_for_event(result['_source'])
@@ -333,7 +333,7 @@ class ElasticSearchConn(object):
         if debug is not None:
             index = "observatory-v4-test-events-{}-*".format(event_type)
         else:
-            index = "observatory-v4-events-{}-*".format(event_type)
+            index = "observatory-v4-query-events-{}-*".format(event_type)
 
         kwargs = {'from': start, 'size': size,
                 'sort': "view_ts:desc"}
