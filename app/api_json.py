@@ -60,9 +60,8 @@ def json_tags():
 
 @bp.route('/asndrop', methods=['GET'])
 def json_asndrop():
-    #r = requests.get(current_app.config['META_SERVICE'] + "/asndrop")
-    #data = json.loads(r.content.decode('utf-8'))
-    data = {}
+    r = requests.get(current_app.config['META_SERVICE'] + "/asndrop")
+    data = json.loads(r.content.decode('utf-8'))
     return post_process(data)
 
 @bp.route('/blacklist', methods=['GET'])
