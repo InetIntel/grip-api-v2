@@ -1,7 +1,7 @@
 This is a rewrite of the GRIP API as a Python Flask app.
 
 This API conforms to the specifications described at
-https://github.com/CAIDA/grip-api/wiki/API-Documentation
+[https://github.com/InetIntel/grip-api-legacy/blob/master/api-spec.md](https://github.com/InetIntel/grip-api-legacy/blob/master/api-spec.md)
 
 
 Deployment instructions for development
