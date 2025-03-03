@@ -86,7 +86,7 @@ def json_event_by_id(evid):
     try:
         pending = es.getEventById(evid)
     except elasticsearch.exceptions.NotFoundError:
-        return {'error': 'eventNotFound'}, 400
+        return {'error': 'The requested event was not found'}, 400
     return post_process(pending)
 
 @bp.route('/events', methods=['GET'])
