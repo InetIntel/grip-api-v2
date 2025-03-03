@@ -83,9 +83,10 @@ def json_blocklist():
 @bp.route('/event/id/<evid>', methods=['GET'])
 def json_event_by_id(evid):
     es = getElastic()
-
-    pending = es.getEventById(evid)
-
+    try:
+        pending = es.getEventById(evid)
+    except elasticsearch.exceptions.NotFoundError:
+        return {'error': 'eventNotFound'}, 400
     return post_process(pending)
 
 @bp.route('/events', methods=['GET'])
@@ -101,12 +102,9 @@ def json_search_events():
 def json_pfx_event_by_id(evid, prefix):
     es = getElastic()
 
-    try:
-        fullev = es.getEventById(evid)
-        if 'error' in fullev:
-            return fullev
-    except elasticsearch.exceptions.NotFoundError as e:
-        return {'error': 'eventIDNotFound'}, 400
+    fullev = es.getEventById(evid)
+    if 'error' in fullev:
+        return fullev
 
     replaced = prefix.replace("-", "/")
     search = replaced.split("_")
