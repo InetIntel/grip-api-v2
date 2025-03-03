@@ -38,6 +38,7 @@
 # academic research and education purposes is subject to the conditions and
 # copyright notices in the source code files and in the included LICENSE file.
 
+import elasticsearch
 from flask import Blueprint, jsonify, request, current_app
 import requests, json
 
@@ -100,9 +101,12 @@ def json_search_events():
 def json_pfx_event_by_id(evid, prefix):
     es = getElastic()
 
-    fullev = es.getEventById(evid)
-    if 'error' in fullev:
-        return fullev
+    try:
+        fullev = es.getEventById(evid)
+        if 'error' in fullev:
+            return fullev
+    except elasticsearch.exceptions.NotFoundError as e:
+        return {'error': 'eventIDNotFound'}, 400
 
     replaced = prefix.replace("-", "/")
     search = replaced.split("_")
