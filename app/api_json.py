@@ -114,7 +114,7 @@ def json_pfx_event_by_id(evid, prefix):
 
         if fullev['event_type'] in ['moas', 'edges']:
             if len(search) != 1:
-                err_str = f'{fullev['event_type']} must only have one prefix in the fingerprint for a pfx_event!'
+                err_str = f"{fullev['event_type']} must only have one prefix in the fingerprint for a pfx_event!"
                 raise ValidationError(err_str)
             
             for p in fullev['pfx_events']:
@@ -124,7 +124,7 @@ def json_pfx_event_by_id(evid, prefix):
         elif fullev['event_type'] in ['defcon', 'submoas']:
 
             if len(search) != 2:
-                err_str = f'{fullev['event_type']} must have two prefixes (sub-pfx and super-pfx) in the fingerprint for a pfx_event!'
+                err_str = f"{fullev['event_type']} must have two prefixes (sub-pfx and super-pfx) in the fingerprint for a pfx_event!"
                 raise ValidationError(err_str)
             
             for p in fullev['pfx_events']:
