@@ -45,6 +45,8 @@ import re, time
 
 from flask import current_app, g, request, jsonify
 
+from app.GripException import ValidationError
+
 OLD_TIME_FMT="^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$"
 NEW_TIME_FMT="^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
 
@@ -302,14 +304,16 @@ class ElasticSearchConn(object):
     def getEventById(self, evid):
         evparams = evid.split('-')
         if len(evparams) != 3:
-            return {'error': "Invalid event ID format -- should be <evtype>-<timestamp>-<aslist>"}
-
+            err_str = "Invalid event ID format -- should be <evtype>-<timestamp>-<aslist>"
+            raise ValidationError(err_str)
+         
         evtype = evparams[0]
         try:
             evts = datetime.fromtimestamp(int(evparams[1]))
             datestr = datetime.strftime(evts, "%Y-%m")
         except:
-            return {'error': "Invalid timestamp in event ID -- should be a unix timestamp"}
+            err_str = "Invalid timestamp in event ID -- should be a unix timestamp"
+            raise ValidationError(err_str)
 
         indexname = "observatory-v4-query-events-{}-{}".format(
                 evtype, datestr)
