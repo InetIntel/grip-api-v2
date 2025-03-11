@@ -39,10 +39,11 @@
 # copyright notices in the source code files and in the included LICENSE file.
 
 import elasticsearch
-from flask import Blueprint, jsonify, request, current_app, make_response
+from flask import Blueprint, jsonify, request, current_app
 import requests, json
 
 from app.elastic import getElastic
+from app.utils import handle_exception
 
 COPYRIGHT_STRING="This data is Copyright (c) 2021 Georgia Tech Research Corporation. All Rights Reserved."
 
@@ -52,14 +53,6 @@ def post_process(data):
     data['copyright'] = COPYRIGHT_STRING
     x = jsonify(data)
     return x
-
-def handle_exception(message, status_code): 
-    return make_response(jsonify(message), status_code)
-@bp.errorhandler(404)
-def not_found(error):
-    return handle_exception({
-        "error": "The requested URL was not found on the server."
-    }, 404)
 
 @bp.route('/tags', methods=['GET'])
 def json_tags():

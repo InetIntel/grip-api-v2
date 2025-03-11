@@ -46,6 +46,12 @@ from . import api_json
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
+    
+    @app.errorhandler(404)
+    def not_found(error):
+        return handle_exception({
+            "error": "The requested URL was not found on the server."
+        }, 404)
 
     if test_config is None:
         app.config.from_file('config.toml', load=toml.load)
