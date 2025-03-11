@@ -42,6 +42,8 @@ import os
 import toml
 
 from flask import Flask, current_app
+
+from app.utils import handle_exception
 from . import api_json
 
 def create_app(test_config=None):
