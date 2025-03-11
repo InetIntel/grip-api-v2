@@ -39,7 +39,7 @@
 # copyright notices in the source code files and in the included LICENSE file.
 
 import elasticsearch
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, make_response
 import requests, json
 
 from app.elastic import getElastic
@@ -52,6 +52,14 @@ def post_process(data):
     data['copyright'] = COPYRIGHT_STRING
     x = jsonify(data)
     return x
+
+def handle_exception(message, status_code): 
+    return make_response(jsonify(message), status_code)
+@bp.errorhandler(404)
+def not_found(error):
+    return handle_exception({
+        "error": "The requested URL was not found on the server."
+    }, 404)
 
 @bp.route('/tags', methods=['GET'])
 def json_tags():
@@ -86,7 +94,9 @@ def json_event_by_id(evid):
     try:
         pending = es.getEventById(evid)
     except elasticsearch.exceptions.NotFoundError:
-        return {'error': 'The requested event was not found'}, 400
+        return handle_exception({
+            'error': 'The requested event was not found'
+        }, 404)
     return post_process(pending)
 
 @bp.route('/events', methods=['GET'])
