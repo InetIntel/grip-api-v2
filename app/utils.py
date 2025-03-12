@@ -7,4 +7,6 @@ def handle_exception(message_str, status_code):
 
 def validate_event_id(id):
     try: 
-        id_split = 
+        id_split = id.split('-')
+    except:
+        pass
