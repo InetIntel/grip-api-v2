@@ -51,15 +51,11 @@ def create_app(test_config=None):
     
     @app.errorhandler(404)
     def not_found(error):
-        return handle_exception({
-            "error": "The requested URL was not found on the server."
-        }, 404)
+        return handle_exception("The requested URL was not found on the server.", 404)
 
     @app.errorhandler(500)
     def internal_error(error):
-        return handle_exception({
-            "error": "Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application."
-        }, 500)
+        return handle_exception("Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.", 500)
 
     if test_config is None:
         app.config.from_file('config.toml', load=toml.load)

@@ -90,9 +90,7 @@ def json_event_by_id(evid):
         return post_process(pending)
 
     except elasticsearch.exceptions.NotFoundError:
-        return handle_exception({
-            'error': 'The requested event was not found'
-        }, 404)
+        return handle_exception('The requested event was not found', 404)
     
     except ValidationError as v:
         return handle_exception(v.args[0], 400)
@@ -145,9 +143,7 @@ def json_pfx_event_by_id(evid, prefix):
         return handle_exception(v.args[0], 400)
 
     except elasticsearch.exceptions.NotFoundError:
-        return handle_exception({
-            'error': 'The requested event was not found'
-        }, 404)
+        return handle_exception('The requested event was not found', 404)
 
     except Exception as e:
         return handle_exception(e.args[0], 500)
