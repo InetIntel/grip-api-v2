@@ -44,17 +44,10 @@ from flask import Blueprint, jsonify, request, current_app
 import requests, json
 
 from app.elastic import getElastic
-from app.utils import handle_exception
+from app.utils import handle_exception, post_process
 from app.GripException import ValidationError
 
-COPYRIGHT_STRING="This data is Copyright (c) 2021 Georgia Tech Research Corporation. All Rights Reserved."
-
 bp = Blueprint('json', __name__, url_prefix="/json")
-
-def post_process(data):
-    data['copyright'] = COPYRIGHT_STRING
-    x = jsonify(data)
-    return x
 
 @bp.route('/tags', methods=['GET'])
 def json_tags():
