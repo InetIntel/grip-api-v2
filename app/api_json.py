@@ -98,7 +98,7 @@ def json_event_by_id(evid):
         return handle_exception(v.args[0], 400)
     
     except Exception as e:
-        raise e
+        return handle_exception(e.args[0], 500)
 
 @bp.route('/events', methods=['GET'])
 def json_search_events():
@@ -150,5 +150,4 @@ def json_pfx_event_by_id(evid, prefix):
         }, 404)
 
     except Exception as e:
-        print(e)
-        raise e
+        return handle_exception(e.args[0], 500)
