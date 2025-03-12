@@ -150,4 +150,5 @@ def json_pfx_event_by_id(evid, prefix):
         }, 404)
 
     except Exception as e:
+        print(e)
         raise e
