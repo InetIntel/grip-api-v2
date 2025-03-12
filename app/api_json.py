@@ -38,6 +38,7 @@
 # academic research and education purposes is subject to the conditions and
 # copyright notices in the source code files and in the included LICENSE file.
 
+from ipaddress import ip_network
 import elasticsearch
 from flask import Blueprint, jsonify, request, current_app
 import requests, json
@@ -116,6 +117,10 @@ def json_pfx_event_by_id(evid, prefix):
 
         replaced = prefix.replace("-", "/")
         search = replaced.split("_")
+        
+        for prefix_addr in search:
+            # Validating IP addresses
+            _ = ip_network(prefix_addr)
 
         if fullev['event_type'] in ['moas', 'edges']:
             if len(search) != 1:
@@ -144,6 +149,9 @@ def json_pfx_event_by_id(evid, prefix):
 
     except elasticsearch.exceptions.NotFoundError:
         return handle_exception('The requested event was not found', 404)
+
+    except ValueError as val:
+        return handle_exception(v.args[0], 400)
 
     except Exception as e:
         return handle_exception(e.args[0], 500)
