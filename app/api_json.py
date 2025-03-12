@@ -119,7 +119,8 @@ def json_pfx_event_by_id(evid, prefix):
         search = replaced.split("_")
         
         for prefix_addr in search:
-            # Validating IP addresses
+            # Validating IP addresses, this line will throw a ValueError
+            # If IP prefix validation fails
             _ = ip_network(prefix_addr)
 
         if fullev['event_type'] in ['moas', 'edges']:
