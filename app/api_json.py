@@ -155,4 +155,4 @@ def json_pfx_event_by_id(evid, prefix):
         return handle_exception(v.args[0], 400)
 
     except Exception as e:
-        return handle_exception(`e.args[0], 500)
+        return handle_exception(e.args[0], 500)
