@@ -152,7 +152,7 @@ def json_pfx_event_by_id(evid, prefix):
         return handle_exception('The requested event was not found', 404)
 
     except ValueError as val:
-        return handle_exception(v.args[0], 400)
+        return handle_exception(val.args[0], 400)
 
     except Exception as e:
         return handle_exception(e.args[0], 500)
