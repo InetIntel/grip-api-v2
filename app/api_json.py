@@ -143,7 +143,7 @@ def json_pfx_event_by_id(evid, prefix):
                     if p['details']['super_pfx'] == search[1]:
                         return post_process(p)
 
-        return {}
+        return handle_exception('No events with the given search parameters were found', 404) # Should this be done, or should we send a 200 with an empty response
     
     except ValidationError as v:
         return handle_exception(v.args[0], 400)
@@ -155,4 +155,4 @@ def json_pfx_event_by_id(evid, prefix):
         return handle_exception(v.args[0], 400)
 
     except Exception as e:
-        return handle_exception(e.args[0], 500)
+        return handle_exception(`e.args[0], 500)
