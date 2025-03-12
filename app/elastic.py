@@ -308,6 +308,7 @@ class ElasticSearchConn(object):
             raise ValidationError(err_str)
          
         evtype = evparams[0]
+        
         try:
             evts = datetime.fromtimestamp(int(evparams[1]))
             datestr = datetime.strftime(evts, "%Y-%m")
