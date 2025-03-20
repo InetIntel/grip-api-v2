@@ -107,6 +107,7 @@ def json_pfx_event_by_id(evid, prefix):
         es = getElastic()
         
         fullev = es.getEventById(evid)
+        print(evid)
 
         replaced = prefix.replace("-", "/")
         search = replaced.split("_")
