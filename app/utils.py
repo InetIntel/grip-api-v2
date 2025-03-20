@@ -3,7 +3,6 @@ from flask import jsonify, make_response
 
 from app.GripException import ValidationError
 
-VALID_EVENT_TYPES = ['moas', 'submoas', 'defcon', 'edges']
 COPYRIGHT_STRING = "This data is Copyright (c) 2021 Georgia Tech Research Corporation. All Rights Reserved."
 
 def handle_exception(message_str, status_code):
