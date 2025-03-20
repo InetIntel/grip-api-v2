@@ -44,7 +44,7 @@ from flask import Blueprint, request, current_app
 import requests, json
 
 from app.elastic import getElastic
-from app.utils import handle_exception, post_process
+from app.utils import handle_exception, post_process, validate_event_id
 from app.GripException import ValidationError
 
 bp = Blueprint('json', __name__, url_prefix="/json")
@@ -80,6 +80,7 @@ def json_blocklist():
 def json_event_by_id(evid):
     try:
         es = getElastic()
+        validate_event_id(evid)
         pending = es.getEventById(evid)
         return post_process(pending)
 
@@ -105,7 +106,7 @@ def json_search_events():
 def json_pfx_event_by_id(evid, prefix):
     try:
         es = getElastic()
-        print(evid)
+        validate_event_id(evid)
         fullev = es.getEventById(evid)
 
         replaced = prefix.replace("-", "/")
