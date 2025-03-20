@@ -40,7 +40,7 @@
 
 from ipaddress import ip_network
 import elasticsearch
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, request, current_app
 import requests, json
 
 from app.elastic import getElastic
@@ -105,9 +105,8 @@ def json_search_events():
 def json_pfx_event_by_id(evid, prefix):
     try:
         es = getElastic()
-        
-        fullev = es.getEventById(evid)
         print(evid)
+        fullev = es.getEventById(evid)
 
         replaced = prefix.replace("-", "/")
         search = replaced.split("_")
