@@ -53,19 +53,19 @@ bp = Blueprint('json', __name__, url_prefix="/json")
 def json_tags():
     r = requests.get(current_app.config['META_SERVICE'] + "/tags")
     data = json.loads(r.content.decode('utf-8'))
-    return post_process(data)
+    return post_process(data), 200
 
 @bp.route('/asndrop', methods=['GET'])
 def json_asndrop():
     r = requests.get(current_app.config['META_SERVICE'] + "/asndrop")
     data = json.loads(r.content.decode('utf-8'))
-    return post_process(data)
+    return post_process(data), 200
 
 @bp.route('/blacklist', methods=['GET'])
 def json_blacklist():
     r = requests.get(current_app.config['META_SERVICE'] + "/blacklist")
     data = json.loads(r.content.decode('utf-8'))
-    return post_process(data)
+    return post_process(data), 200
 
 @bp.route('/blocklist', methods=['GET'])
 def json_blocklist():
@@ -74,7 +74,7 @@ def json_blocklist():
     # rename blacklist to blocklist because that's what the caller will expect
     data['blocklist'] = data.pop('blacklist')
 
-    return post_process(data)
+    return post_process(data), 200
 
 @bp.route('/event/id/<evid>', methods=['GET'])
 def json_event_by_id(evid):
@@ -82,7 +82,7 @@ def json_event_by_id(evid):
         es = getElastic()
         validate_event_id(evid)
         pending = es.getEventById(evid)
-        return post_process(pending)
+        return post_process(pending), 200
 
     except elasticsearch.exceptions.NotFoundError:
         return handle_exception('The requested event was not found', 404)
@@ -100,7 +100,7 @@ def json_search_events():
     es = getElastic()
 
     pending = es.lookupEvents(args)
-    return post_process(pending)
+    return post_process(pending), 200
 
 @bp.route('/pfx_event/id/<evid>/<prefix>', methods=['GET'])
 def json_pfx_event_by_id(evid, prefix):
@@ -124,7 +124,7 @@ def json_pfx_event_by_id(evid, prefix):
             
             for p in fullev['pfx_events']:
                 if p['details']['prefix'] == search[0]:
-                    return post_process(p)
+                    return post_process(p), 200
 
         elif fullev['event_type'] in ['defcon', 'submoas']:
 
@@ -135,9 +135,9 @@ def json_pfx_event_by_id(evid, prefix):
             for p in fullev['pfx_events']:
                 if p['details']['sub_pfx'] == search[0]:
                     if p['details']['super_pfx'] == search[1]:
-                        return post_process(p)
+                        return post_process(p), 200
 
-        return handle_exception('No events with the given search parameters were found', 404) # Should this be done, or should we send a 200 with an empty response
+        return handle_exception('No events with the given search parameters were found', 404)
     
     except ValidationError as v:
         return handle_exception(v.args[0], 400)
