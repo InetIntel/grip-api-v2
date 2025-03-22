@@ -21,17 +21,12 @@ def is_valid_past_timestamp(timestamp:str):
 def is_valid_asn(asn:str):
     try:
         asn = int(asn)
-        isValid = True
 
         # checking for 32 bit int
         if 1 <= asn <= 4294967295:
-            # Checking if private/reserved ASN
-            if 64512 <= asn <= 65534 or 4200000000 <= asn <= 4294967295:
-                isValid = False
-        else:
-            isValid = False
+            return True
 
-        return isValid
+        return False
     
     except ValueError:
         err_str = "One or more ASNs listed in the event ID are not valid ASNs"
