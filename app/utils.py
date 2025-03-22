@@ -129,7 +129,6 @@ def validate_event_id(id):
             err_str = "Invalid timestamp. Timestamp must be of UNIX timestamp format from the past."
             raise ValidationError(err_str)
 
-        global event_validation_strategy
         event_validation_strategy[event_type](as_details)
 
     except KeyError:
