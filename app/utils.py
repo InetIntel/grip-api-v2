@@ -40,9 +40,15 @@ def is_valid_asn(asn:str):
 def validate_moas(as_list):
     try:
         as_list_arr = as_list.split('_')
+        assert len(as_list_arr)
+
+        as_list_seen = set()
+
         for asn in as_list_arr:
-            assert is_valid_asn(asn)  
-    
+            assert is_valid_asn(asn)
+            assert asn not in as_list_seen
+            as_list_seen.add(asn)
+
     except Exception as e:
         err_str = "Invalid MOAS event. The right format for a MOAS event is moas-<unix_timestamp>-<asn1_asn2_...>, with each asn being a valid AS number"
         raise ValidationError(err_str)
@@ -53,12 +59,22 @@ def validate_submoas(as_list):
         assert len(as_list_arr) == 2
         
         victim_list = as_list_arr[0].split('_')
+        assert len(victim_list)
+
+        as_list_seen = set()
+
         for asn in victim_list:
             assert is_valid_asn(asn)
+            assert asn not in as_list_seen
+            as_list_seen.add(asn)
         
         attacker_list = as_list_arr[1].split('_')
+        assert len(attacker_list)
+
         for asn in attacker_list:
             assert is_valid_asn(asn)
+            assert asn not in as_list_seen
+            as_list_seen.add(asn)
 
     except Exception as e:
         err_str = "Invalid SUBMOAS event. The right format for a SUBMOAS event is submoas-<unix_timestamp>-<victim-asn1_victim-asn2_...>=<attacker-asn1_attacker-asn2...>, with each asn being a valid AS number"
@@ -67,8 +83,13 @@ def validate_submoas(as_list):
 def validate_defcon(as_list):
     try:
         as_list_arr = as_list.split('_')
+        assert len(as_list_arr)
+        as_list_seen = set()
+
         for asn in as_list_arr:
-            assert is_valid_asn(asn)  
+            assert is_valid_asn(asn)
+            assert asn not in as_list_seen
+            as_list_seen.add(asn)
 
     except Exception as e:
         err_str = "Invalid DEFCON event ID. The right format for a DEFCON event is defcon-<unix_timestamp>-<victim-asn1_victim-asn2_...>, with each asn being a valid AS number"
@@ -78,12 +99,19 @@ def validate_edges(as_list):
     try:
         as_list_arr = as_list.split('_')
         assert len(as_list_arr) == 2
-        assert is_valid_asn(as_list_arr[0]) and is_valid_asn(as_list_arr[1])  
+        assert is_valid_asn(as_list_arr[0]) and is_valid_asn(as_list_arr[1])
+        assert as_list_arr[0] != as_list_arr[1]
 
     except Exception as e:
         err_str = "Invalid edges event ID. The right format for a edges event is edges-<unix_timestamp>-<asn1_asn2>, with each asn being a valid AS number"
         raise ValidationError(err_str)
 
+event_validation_strategy = {
+    'moas': validate_moas,
+    'submoas': validate_submoas,
+    'defcon': validate_defcon,
+    'edges': validate_edges
+}
 
 def validate_event_id(id):
     try:
@@ -100,15 +128,9 @@ def validate_event_id(id):
         if not is_valid_past_timestamp(timestamp):
             err_str = "Invalid timestamp. Timestamp must be of UNIX timestamp format from the past."
             raise ValidationError(err_str)
-        
-        event_validation_strategy = {
-            'moas': validate_moas,
-            'submoas': validate_submoas,
-            'defcon': validate_defcon,
-            'edges': validate_edges
-        }[event_type]
 
-        event_validation_strategy(as_details)
+        global event_validation_strategy
+        event_validation_strategy[event_type](as_details)
 
     except KeyError:
         err_str = "Unknown event type. Event type must be one of [ moas, submoas, defcon, edges ]"
