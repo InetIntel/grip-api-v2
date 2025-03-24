@@ -44,6 +44,9 @@ def validate_moas(as_list):
             assert asn not in as_list_seen
             as_list_seen.add(asn)
 
+    except ValidationError as v:
+        raise v
+    
     except Exception as e:
         err_str = "Invalid MOAS event. The right format for a MOAS event is moas-<unix_timestamp>-<asn1_asn2_...>, with each asn being a valid AS number"
         raise ValidationError(err_str)
@@ -63,6 +66,8 @@ def validate_submoas(as_list):
             assert asn not in as_list_seen
             as_list_seen.add(asn)
         
+        as_list_seen = set() # reinitializing as attackers can potentially be in the victim list
+
         attacker_list = as_list_arr[1].split('_')
         assert len(attacker_list)
 
@@ -71,6 +76,9 @@ def validate_submoas(as_list):
             assert asn not in as_list_seen
             as_list_seen.add(asn)
 
+    except ValidationError as v:
+        raise v
+    
     except Exception as e:
         err_str = "Invalid SUBMOAS event. The right format for a SUBMOAS event is submoas-<unix_timestamp>-<victim-asn1_victim-asn2_...>=<attacker-asn1_attacker-asn2...>, with each asn being a valid AS number"
         raise ValidationError(err_str)
@@ -85,7 +93,10 @@ def validate_defcon(as_list):
             assert is_valid_asn(asn)
             assert asn not in as_list_seen
             as_list_seen.add(asn)
-
+    
+    except ValidationError as v:
+            raise v
+    
     except Exception as e:
         err_str = "Invalid DEFCON event ID. The right format for a DEFCON event is defcon-<unix_timestamp>-<victim-asn1_victim-asn2_...>, with each asn being a valid AS number"
         raise ValidationError(err_str)
@@ -96,7 +107,10 @@ def validate_edges(as_list):
         assert len(as_list_arr) == 2
         assert is_valid_asn(as_list_arr[0]) and is_valid_asn(as_list_arr[1])
         assert as_list_arr[0] != as_list_arr[1]
-
+    
+    except ValidationError as v:
+        raise v
+    
     except Exception as e:
         err_str = "Invalid edges event ID. The right format for a edges event is edges-<unix_timestamp>-<asn1_asn2>, with each asn being a valid AS number"
         raise ValidationError(err_str)
