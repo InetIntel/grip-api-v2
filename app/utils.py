@@ -19,18 +19,15 @@ def is_valid_past_timestamp(timestamp:str):
     return 0 < timestamp < current_timestamp
     
 def is_valid_asn(asn:str):
-    try:
-        asn = int(asn)
+    asn = int(asn)
 
-        # checking for 32 bit int
-        if 1 <= asn <= 4294967295:
-            return True
+    # checking for 32 bit int
+    if 1 <= asn <= 4294967295:
+        return True
 
-        return False
-    
-    except ValueError:
-        err_str = "One or more ASNs listed in the event ID are not valid ASNs"
-        raise ValidationError(err_str)
+    # If the function reaches here the asn is invalid
+    err_str = "One or more ASNs listed in the event ID are not valid ASNs"
+    raise ValidationError(err_str)
 
 def validate_moas(as_list):
     try:
