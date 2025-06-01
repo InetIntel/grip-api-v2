@@ -23,7 +23,20 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
+    
+    - name: Create config.toml from secrets
+      run: |
+        mkdir -p instance
+        cat <<EOF > instance/config.toml
+        ES_API_KEY_ID = "${{ secrets.ES_API_KEY_ID }}"
+        ES_API_KEY_SECRET = "${{ secrets.ES_API_KEY_SECRET }}"
+        ES_NODES = ${{
+          secrets.ES_NODES
+        }}
+        SECRET_KEY = "${{ secrets.SECRET_KEY }}"
+        META_SERVICE = "${{ secrets.META_SERVICE }}"
+        EOF
+    
     - name: Run tests
       run: |
         pytest app/test
