@@ -38,37 +38,34 @@
 # academic research and education purposes is subject to the conditions and
 # copyright notices in the source code files and in the included LICENSE file.
 
-from flask import Blueprint, jsonify, request, current_app
+from ipaddress import ip_network
+import elasticsearch
+from flask import Blueprint, request, current_app
 import requests, json
 
 from app.elastic import getElastic
-
-COPYRIGHT_STRING="This data is Copyright (c) 2021 Georgia Tech Research Corporation. All Rights Reserved."
+from app.utils import handle_exception, post_process, validate_event_id
+from app.GripException import ValidationError
 
 bp = Blueprint('json', __name__, url_prefix="/json")
-
-def post_process(data):
-    data['copyright'] = COPYRIGHT_STRING
-    x = jsonify(data)
-    return x
 
 @bp.route('/tags', methods=['GET'])
 def json_tags():
     r = requests.get(current_app.config['META_SERVICE'] + "/tags")
     data = json.loads(r.content.decode('utf-8'))
-    return post_process(data)
+    return post_process(data), 200
 
 @bp.route('/asndrop', methods=['GET'])
 def json_asndrop():
     r = requests.get(current_app.config['META_SERVICE'] + "/asndrop")
     data = json.loads(r.content.decode('utf-8'))
-    return post_process(data)
+    return post_process(data), 200
 
 @bp.route('/blacklist', methods=['GET'])
 def json_blacklist():
     r = requests.get(current_app.config['META_SERVICE'] + "/blacklist")
     data = json.loads(r.content.decode('utf-8'))
-    return post_process(data)
+    return post_process(data), 200
 
 @bp.route('/blocklist', methods=['GET'])
 def json_blocklist():
@@ -77,15 +74,24 @@ def json_blocklist():
     # rename blacklist to blocklist because that's what the caller will expect
     data['blocklist'] = data.pop('blacklist')
 
-    return post_process(data)
+    return post_process(data), 200
 
 @bp.route('/event/id/<evid>', methods=['GET'])
 def json_event_by_id(evid):
-    es = getElastic()
+    try:
+        es = getElastic()
+        validate_event_id(evid)
+        pending = es.getEventById(evid)
+        return post_process(pending), 200
 
-    pending = es.getEventById(evid)
-
-    return post_process(pending)
+    except elasticsearch.exceptions.NotFoundError:
+        return handle_exception('The requested event was not found', 404)
+    
+    except ValidationError as v:
+        return handle_exception(v.args[0], 400)
+    
+    except Exception as e:
+        return handle_exception(e.args[0], 500)
 
 @bp.route('/events', methods=['GET'])
 def json_search_events():
@@ -94,36 +100,53 @@ def json_search_events():
     es = getElastic()
 
     pending = es.lookupEvents(args)
-    return post_process(pending)
+    return post_process(pending), 200
 
 @bp.route('/pfx_event/id/<evid>/<prefix>', methods=['GET'])
 def json_pfx_event_by_id(evid, prefix):
-    es = getElastic()
+    try:
+        es = getElastic()
+        validate_event_id(evid)
+        fullev = es.getEventById(evid)
 
-    fullev = es.getEventById(evid)
-    if 'error' in fullev:
-        return fullev
+        replaced = prefix.replace("-", "/")
+        search = replaced.split("_")
+        
+        for prefix_addr in search:
+            # Validating IP addresses, this line will throw a ValueError
+            # If IP prefix validation fails
+            _ = ip_network(prefix_addr)
 
-    replaced = prefix.replace("-", "/")
-    search = replaced.split("_")
+        if fullev['event_type'] in ['moas', 'edges']:
+            if len(search) != 1:
+                err_str = f"{fullev['event_type']} must only have one prefix in the fingerprint for a pfx_event!"
+                raise ValidationError(err_str)
+            
+            for p in fullev['pfx_events']:
+                if p['details']['prefix'] == search[0]:
+                    return post_process(p), 200
 
-    if fullev['event_type'] in ['moas', 'edges']:
-        if len(search) != 1:
-            return {'error': '{} must only have one prefix in the fingerprint for a pfx_event!'.format(fullev['event_type'])}
+        elif fullev['event_type'] in ['defcon', 'submoas']:
 
-        for p in fullev['pfx_events']:
-            if p['details']['prefix'] == search[0]:
-                return post_process(p)
+            if len(search) != 2:
+                err_str = f"{fullev['event_type']} must have two prefixes (sub-pfx and super-pfx) in the fingerprint for a pfx_event!"
+                raise ValidationError(err_str)
+            
+            for p in fullev['pfx_events']:
+                if p['details']['sub_pfx'] == search[0]:
+                    if p['details']['super_pfx'] == search[1]:
+                        return post_process(p), 200
 
-    elif fullev['event_type'] in ['defcon', 'submoas']:
+        return handle_exception('No events with the given search parameters were found', 404)
+    
+    except ValidationError as v:
+        return handle_exception(v.args[0], 400)
 
-        if len(search) != 2:
-            return {'error': '{} must have two prefixes (sub-pfx and super-pfx) in the fingerprint for a pfx_event!'.format(fullev['event_type'])}
+    except elasticsearch.exceptions.NotFoundError:
+        return handle_exception('The requested event was not found', 404)
 
-        for p in fullev['pfx_events']:
-            if p['details']['sub_pfx'] == search[0]:
-                if p['details']['super_pfx'] == search[1]:
-                    return post_process(p)
+    except ValueError as val:
+        return handle_exception("One or more invalid IP prefixes: " + val.args[0], 400)
 
-    return {}
-
+    except Exception as e:
+        return handle_exception(e.args[0], 500)

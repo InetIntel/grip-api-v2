@@ -22,7 +22,7 @@ Deployment instructions for development
 3. Install dependencies:
 
 ```
-     pip3 install flask elasticsearch toml requests
+     pip3 install flask toml requests elasticsearch==7.17.12
 ```
 
 4. Create a directory called `instance` in the directory where this README
