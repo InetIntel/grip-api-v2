@@ -48,7 +48,7 @@ Config options
 
 Configuration is written using the TOML format.
 
-There are 5 config options for this API, all of which are required:
+There are 6 config options for this API, all of which are required:
 
  * `ES_NODES`: a list of URIs describing the members of the elasticsearch
                cluster where the GRIP events are stored.
@@ -60,6 +60,10 @@ There are 5 config options for this API, all of which are required:
  * `SECRET_KEY`: a random string that flask will use internally for generating
                  session cookies -- can be anything you like.
  * `META_SERVICE`: the URL to query to access the grip-tags-service.
+ * `ES_INDEX_BASE`: the string that should be pre-pended when determining
+                    which indexes that ES should be using to
+                    service API queries for events (i.e. a typical index name
+                    with the event type and month excluded).
 
 Note that an elasticsearch API key may be provided to you in a base64 encoded
 format. You will need to base64 decode the key to get the ID and secret
@@ -72,6 +76,7 @@ ES_API_KEY_ID = "VuaCfGcBCdbkQm-e5aOx"
 ES_API_KEY_SECRET = "ui2lp2axTNmsyakw9tvNnw"
 SECRET_KEY="myverylongsupersecretkey"
 META_SERVICE="http://grip-tags.example.org:5000"
+ES_INDEX_BASE="observatory-v4-query-events"
 ```
 
 Code structure
