@@ -201,6 +201,12 @@ def buildESEventQuery(queryparams):
             }
     } )
 
+
+    primary_inference_id = queryparams.get("inference_id", type=str)
+    if primary_inference_id is not None:
+        add_match_params(must_terms, must_not_terms,
+                "summary.inference_result.primary_inference.inference_id", primary_inference_id)
+
     max_dur = queryparams.get("max_duration", type=int)
     min_dur = queryparams.get("min_duration", type=int)
 
@@ -237,6 +243,12 @@ def buildESEventQuery(queryparams):
     if codestring is not None:
         add_match_params(must_terms, must_not_terms,
                 "summary.inference_result.inferences.inference_id", codestring);
+
+    inference_labels = queryparams.get("inference_labels", type=str)
+    if inference_labels is not None:
+        add_match_params(must_terms, must_not_terms,
+                 "summary.inference_result.primary_inference.labels",
+                 inference_labels)
 
     return {
         'query': {
@@ -378,5 +390,5 @@ def getElastic():
         g.es = ElasticSearchConn(current_app.config['ES_NODES'],
                 current_app.config['ES_API_KEY_ID'],
                 current_app.config['ES_API_KEY_SECRET'],
-                current_app.config['ES_INDEX_NODES'])
+                current_app.config['ES_INDEX_BASE'])
     return g.es
