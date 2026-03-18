@@ -244,11 +244,11 @@ def buildESEventQuery(queryparams):
         add_match_params(must_terms, must_not_terms,
                 "summary.inference_result.inferences.inference_id", codestring);
 
-    inference_labels = queryparams.get("inference_labels", type=str)
-    if inference_labels is not None:
+    labelstring = queryparams.get('labels', type=str)
+    if labelstring is not None:
         add_match_params(must_terms, must_not_terms,
-                 "summary.inference_result.primary_inference.labels",
-                 inference_labels)
+                "summary.inference_result.primary_inference.labels",
+                labelstring)
 
     return {
         'query': {
