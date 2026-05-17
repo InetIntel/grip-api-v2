@@ -3,7 +3,7 @@ from flask import jsonify, make_response
 
 from app.GripException import ValidationError
 
-COPYRIGHT_STRING = "This data is Copyright (c) 2021 Georgia Tech Research Corporation. All Rights Reserved."
+COPYRIGHT_STRING = f"This data is Copyright (c) 2021-{time.strftime('%Y')} Georgia Tech Research Corporation. All Rights Reserved. This data is provided for academic and educational use only; commercial use and bulk scraping are prohibited. Your use of this API is subject to our Acceptable Use Policy which can be found at https://grip.inetintel.cc.gatech.edu/aup/"
 
 def handle_exception(message_str, status_code):
     message = {'error': message_str}
