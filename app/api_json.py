@@ -43,6 +43,8 @@ import elasticsearch
 from flask import Blueprint, request, current_app
 import requests, json
 
+from app.config.nested_tag_descriptions import NESTED_TAG_DICT
+
 from app.elastic import getElastic
 from app.utils import handle_exception, post_process, validate_event_id
 from app.GripException import ValidationError
@@ -53,6 +55,8 @@ bp = Blueprint('json', __name__, url_prefix="/json")
 def json_tags():
     r = requests.get(current_app.config['META_SERVICE'] + "/tags")
     data = json.loads(r.content.decode('utf-8'))
+
+    data['nested_tag_descriptions'] = NESTED_TAG_DICT
     return post_process(data), 200
 
 @bp.route('/asndrop', methods=['GET'])
