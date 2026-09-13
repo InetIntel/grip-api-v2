@@ -42,8 +42,9 @@ from elasticsearch import Elasticsearch
 from datetime import datetime
 
 import re, time
+from collections import defaultdict
 
-from flask import current_app, g, request, jsonify
+from flask import current_app, g
 
 from app.GripException import ValidationError
 
@@ -315,25 +316,42 @@ class ElasticSearchConn(object):
         if not self.es.ping():
             raise ValueError("Failed to connect to ElasticSearch")
 
-    def getEventById(self, evid):
-        evparams = evid.split('-')
-        if len(evparams) != 3:
+    def get_event_by_id(self, event_id, version = 'v1'):
+        event_params = event_id.split('-')
+        if len(event_params) != 3:
             err_str = "Invalid event ID format -- should be <evtype>-<timestamp>-<aslist>"
             raise ValidationError(err_str)
-         
-        evtype = evparams[0]
-        
+ 
+        event_type = event_params[0]
+
         try:
-            evts = datetime.fromtimestamp(int(evparams[1]))
-            datestr = datetime.strftime(evts, "%Y-%m")
+            evts = datetime.fromtimestamp(int(event_params[1]))
+            date_str = datetime.strftime(evts, "%Y-%m")
         except:
             err_str = "Invalid timestamp in event ID -- should be a unix timestamp"
             raise ValidationError(err_str)
 
         indexname = "{}-{}-{}".format(self.index_base, evtype, datestr)
-        result = self.es.get(index=indexname, id=evid)
-        event = enhance_pfxevents_for_event(result['_source'])
-        return event
+        result = self.es.get(index=indexname, id=event_id)
+        event_response = enhance_pfxevents_for_event(result['_source'])
+
+        if version == 'v2':
+            tag_list = result['_source']['summary']['tags']
+            tag_families = defaultdict(list)
+
+            # The groupings for tag_families are based on the 
+            # irr-[IRR]-[common_suffix] families of tags
+
+            for tag in tag_list:
+                if tag.startswith("irr-"):
+                    tag_suffix = tag.split("-", 2)[-1]
+                    tag_families[tag_suffix].append(tag)
+                else:
+                    tag_families["other"].append(tag)
+
+            event_response['summary']['tags'] = tag_families
+
+        return event_response
 
     def lookupEvents(self, queryparams):
 
@@ -349,9 +367,9 @@ class ElasticSearchConn(object):
         full = queryparams.get("full")
 
         if debug is not None and self.index_base == DEFAULT_ES_INDEX_BASE:
-            index = "observatory-v4-test-events-{}-*".format(event_type)
+            index = f"observatory-v4-test-events-{event_type}-*"
         else:
-            index = "{}-{}-*".format(self.index_base, event_type)
+            index = f"{self.index_base}-{event_type}-*"
 
         kwargs = {'from': start, 'size': size,
                 'sort': "view_ts:desc"}

@@ -77,11 +77,15 @@ def json_blocklist():
     return post_process(data), 200
 
 @bp.route('/event/id/<evid>', methods=['GET'])
-def json_event_by_id(evid):
+def json_event_by_id(evid, version='v1'):
+    # v2 API returns tags in a nested format, v1 has to eventually be removed
+    # after transition
+    
     try:
         es = getElastic()
         validate_event_id(evid)
-        pending = es.getEventById(evid)
+        
+        pending = es.get_event_by_id(evid, version)
         return post_process(pending), 200
 
     except elasticsearch.exceptions.NotFoundError:
@@ -103,11 +107,12 @@ def json_search_events():
     return post_process(pending), 200
 
 @bp.route('/pfx_event/id/<evid>/<prefix>', methods=['GET'])
-def json_pfx_event_by_id(evid, prefix):
+def json_pfx_event_by_id(evid, prefix, version='v1'):
+    # v2 API returns tags in a nested format, v1 has to eventually be removed
     try:
         es = getElastic()
         validate_event_id(evid)
-        fullev = es.getEventById(evid)
+        fullev = es.get_event_by_id(evid, version)
 
         replaced = prefix.replace("-", "/")
         search = replaced.split("_")
