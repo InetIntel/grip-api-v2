@@ -38,13 +38,15 @@
 # academic research and education purposes is subject to the conditions and
 # copyright notices in the source code files and in the included LICENSE file.
 
+import json
+
 from ipaddress import ip_network
 import elasticsearch
 from flask import Blueprint, request, current_app
-import requests, json
+import requests
+
 
 from app.config.nested_tag_descriptions import NESTED_TAG_DICT
-
 from app.elastic import getElastic
 from app.utils import handle_exception, post_process, validate_event_id
 from app.GripException import ValidationError
@@ -81,15 +83,13 @@ def json_blocklist():
     return post_process(data), 200
 
 @bp.route('/event/id/<evid>', methods=['GET'])
-def json_event_by_id(evid, version='v1'):
-    # v2 API returns tags in a nested format, v1 has to eventually be removed
-    # after transition
-    
+def json_event_by_id(evid):
+    nested = request.args.get('nested', 'false').lower() == 'true'
     try:
         es = getElastic()
         validate_event_id(evid)
-        
-        pending = es.get_event_by_id(evid, version)
+    
+        pending = es.get_event_by_id(evid, nested)
         return post_process(pending), 200
 
     except elasticsearch.exceptions.NotFoundError:
@@ -111,12 +111,13 @@ def json_search_events():
     return post_process(pending), 200
 
 @bp.route('/pfx_event/id/<evid>/<prefix>', methods=['GET'])
-def json_pfx_event_by_id(evid, prefix, version='v1'):
-    # v2 API returns tags in a nested format, v1 has to eventually be removed
+def json_pfx_event_by_id(evid, prefix):
+    nested = request.args.get('nested', 'false').lower() == 'true'
+
     try:
         es = getElastic()
         validate_event_id(evid)
-        fullev = es.get_event_by_id(evid, version)
+        fullev = es.get_event_by_id(evid, nested)
 
         replaced = prefix.replace("-", "/")
         search = replaced.split("_")
