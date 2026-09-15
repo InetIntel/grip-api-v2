@@ -308,7 +308,7 @@ class ElasticSearchConn(object):
         if not self.es.ping():
             raise ValueError("Failed to connect to ElasticSearch")
 
-    def get_event_by_id(self, event_id, version = 'v1'):
+    def get_event_by_id(self, event_id, nested = False):
         event_params = event_id.split('-')
         if len(event_params) != 3:
             err_str = "Invalid event ID format -- should be <evtype>-<timestamp>-<aslist>"
@@ -327,7 +327,7 @@ class ElasticSearchConn(object):
         result = self.es.get(index=indexname, id=event_id)
         event_response = enhance_pfxevents_for_event(result['_source'])
 
-        if version == 'v2':
+        if nested:
             tag_list = result['_source']['summary']['tags']
             tag_families = defaultdict(list)
 
