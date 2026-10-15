@@ -340,8 +340,7 @@ class ElasticSearchConn(object):
                 result['_source']['summary']['tags']
             )
             for pfx_event in event_response['pfx_events']:
-                if 'tags' in pfx_event:
-                    pfx_event['tags'] = nest_tags(pfx_event['tags'])
+                pfx_event['tags'] = nest_tags(pfx_event['tags'])
 
         return event_response
 
