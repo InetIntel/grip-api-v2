@@ -1,3 +1,4 @@
+# pylint: skip-file
 NESTED_TAG_DICT = {
     "all-newcomer-exact-record": "all newcomer origins have exact IRR records for the announced prefix (subprefix)",
     "all-newcomer-more-specific-record": "all newcomer origins have less specific IRR records for the announced prefix (subprefix)",
