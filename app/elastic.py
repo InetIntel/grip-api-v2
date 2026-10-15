@@ -42,11 +42,11 @@ from elasticsearch import Elasticsearch
 from datetime import datetime
 
 import re, time
-from collections import defaultdict
 
 from flask import current_app, g
 
 from app.GripException import ValidationError
+from app.utils import nest_tags
 
 OLD_TIME_FMT="^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$"
 NEW_TIME_FMT="^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
@@ -336,20 +336,12 @@ class ElasticSearchConn(object):
         event_response = enhance_pfxevents_for_event(result['_source'])
 
         if nested:
-            tag_list = result['_source']['summary']['tags']
-            tag_families = defaultdict(list)
-
-            # The groupings for tag_families are based on the 
-            # irr-[IRR]-[common_suffix] families of tags
-
-            for tag in tag_list:
-                if tag['name'].startswith("irr-"):
-                    tag_suffix = tag['name'].split("-", 2)[-1]
-                    tag_families[tag_suffix].append(tag)
-                else:
-                    tag_families["other"].append(tag)
-
-            event_response['summary']['tags'] = tag_families
+            event_response['summary']['tags'] = nest_tags(
+                result['_source']['summary']['tags']
+            )
+            for pfx_event in event_response['pfx_events']:
+                if 'tags' in pfx_event:
+                    pfx_event['tags'] = nest_tags(pfx_event['tags'])
 
         return event_response
 
