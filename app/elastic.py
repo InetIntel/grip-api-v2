@@ -38,33 +38,42 @@
 # academic research and education purposes is subject to the conditions and
 # copyright notices in the source code files and in the included LICENSE file.
 
-from elasticsearch import Elasticsearch
 from datetime import datetime
 
-import re, time
+import re
+import time
 
-from flask import current_app, g, request, jsonify
+from elasticsearch import Elasticsearch
+from flask import current_app, g
 
 from app.GripException import ValidationError
+from app.utils import nest_tags
 
 OLD_TIME_FMT="^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$"
 NEW_TIME_FMT="^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
 
-# convert a time parameter into a standard format
-#
-# input may be either a number of seconds or milliseconds since the epoch,
-# or it can be a rfc3339 formatted string (assuming UTC time zone)
-#
-# Allowed input formats:
-#   - 2020-04-09T23:52
-#   - 2020-04-09 23:52:00
-#   - 15864763620000
-#   - 15864763620
-#
-# All of the above inputs will be converted into:
-#   - 2020-04-09 23:52:00
-#
+
 def convert_time_str(ts_str):
+    """
+    Convert a time parameter into a standard format
+
+    Input: 
+    A string that may be either 
+     * a number of seconds since the epoch,
+     * a number of milliseconds since the epoch, or
+     * a rfc3339 formatted string (assuming UTC time zone)
+
+    Allowed input formats:
+    - 2020-04-09T23:52
+    - 2020-04-09 23:52:00
+    - 15864763620000
+    - 15864763620
+
+    Output:
+    All of the above inputs will be converted into:
+    - 2020-04-09 23:52:00
+
+    """
     if re.match(NEW_TIME_FMT, ts_str):
         return ts_str
 
@@ -307,26 +316,33 @@ class ElasticSearchConn(object):
         if not self.es.ping():
             raise ValueError("Failed to connect to ElasticSearch")
 
-    def getEventById(self, evid):
-        evparams = evid.split('-')
-        if len(evparams) != 3:
+    def get_event_by_id(self, event_id, nested = False):
+        event_params = event_id.split('-')
+        if len(event_params) != 3:
             err_str = "Invalid event ID format -- should be <evtype>-<timestamp>-<aslist>"
             raise ValidationError(err_str)
-         
-        evtype = evparams[0]
-        
+ 
+        event_type = event_params[0]
+
         try:
-            evts = datetime.fromtimestamp(int(evparams[1]))
-            datestr = datetime.strftime(evts, "%Y-%m")
+            evts = datetime.fromtimestamp(int(event_params[1]))
+            date_str = datetime.strftime(evts, "%Y-%m")
         except:
             err_str = "Invalid timestamp in event ID -- should be a unix timestamp"
             raise ValidationError(err_str)
 
-        indexname = "observatory-v4-query-events-{}-{}".format(
-                evtype, datestr)
-        result = self.es.get(index=indexname, id=evid)
-        event = enhance_pfxevents_for_event(result['_source'])
-        return event
+        indexname = f"observatory-v4-query-events-{event_type}-{date_str}"
+        result = self.es.get(index=indexname, id=event_id)
+        event_response = enhance_pfxevents_for_event(result['_source'])
+
+        if nested:
+            event_response['summary']['tags'] = nest_tags(
+                result['_source']['summary']['tags']
+            )
+            for pfx_event in event_response['pfx_events']:
+                pfx_event['tags'] = nest_tags(pfx_event['tags'])
+
+        return event_response
 
     def lookupEvents(self, queryparams):
 
@@ -342,9 +358,9 @@ class ElasticSearchConn(object):
         full = queryparams.get("full")
 
         if debug is not None:
-            index = "observatory-v4-test-events-{}-*".format(event_type)
+            index = f"observatory-v4-test-events-{event_type}-*"
         else:
-            index = "observatory-v4-query-events-{}-*".format(event_type)
+            index = f"observatory-v4-query-events-{event_type}-*"
 
         kwargs = {'from': start, 'size': size,
                 'sort': "view_ts:desc"}

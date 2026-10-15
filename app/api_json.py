@@ -14,7 +14,7 @@
 #  techlicensing@gtrc.gatech.edu
 #
 # This software program and documentation are copyrighted by Georgia Tech
-# Research Corporation (GTRC). The software program and documentation are 
+# Research Corporation (GTRC). The software program and documentation are
 # supplied "as is", without any accompanying services from GTRC. GTRC does
 # not warrant that the operation of the program will be uninterrupted or
 # error-free. The end-user understands that the program was developed for
@@ -38,62 +38,76 @@
 # academic research and education purposes is subject to the conditions and
 # copyright notices in the source code files and in the included LICENSE file.
 
+import json
+
 from ipaddress import ip_network
 import elasticsearch
 from flask import Blueprint, request, current_app
-import requests, json
+import requests
 
+
+from app.config.nested_tag_descriptions import NESTED_TAG_DICT
 from app.elastic import getElastic
 from app.utils import handle_exception, post_process, validate_event_id
 from app.GripException import ValidationError
 
-bp = Blueprint('json', __name__, url_prefix="/json")
+bp = Blueprint("json", __name__, url_prefix="/json")
 
-@bp.route('/tags', methods=['GET'])
+
+@bp.route("/tags", methods=["GET"])
 def json_tags():
-    r = requests.get(current_app.config['META_SERVICE'] + "/tags")
-    data = json.loads(r.content.decode('utf-8'))
+    r = requests.get(current_app.config["META_SERVICE"] + "/tags")
+    data = json.loads(r.content.decode("utf-8"))
+
+    data["nested_tag_descriptions"] = NESTED_TAG_DICT
     return post_process(data), 200
 
-@bp.route('/asndrop', methods=['GET'])
+
+@bp.route("/asndrop", methods=["GET"])
 def json_asndrop():
-    r = requests.get(current_app.config['META_SERVICE'] + "/asndrop")
-    data = json.loads(r.content.decode('utf-8'))
+    r = requests.get(current_app.config["META_SERVICE"] + "/asndrop")
+    data = json.loads(r.content.decode("utf-8"))
     return post_process(data), 200
 
-@bp.route('/blacklist', methods=['GET'])
+
+@bp.route("/blacklist", methods=["GET"])
 def json_blacklist():
-    r = requests.get(current_app.config['META_SERVICE'] + "/blacklist")
-    data = json.loads(r.content.decode('utf-8'))
+    r = requests.get(current_app.config["META_SERVICE"] + "/blacklist")
+    data = json.loads(r.content.decode("utf-8"))
     return post_process(data), 200
 
-@bp.route('/blocklist', methods=['GET'])
+
+@bp.route("/blocklist", methods=["GET"])
 def json_blocklist():
-    r = requests.get(current_app.config['META_SERVICE'] + "/blacklist")
-    data = json.loads(r.content.decode('utf-8'))
+    r = requests.get(current_app.config["META_SERVICE"] + "/blacklist")
+    data = json.loads(r.content.decode("utf-8"))
     # rename blacklist to blocklist because that's what the caller will expect
-    data['blocklist'] = data.pop('blacklist')
+    data["blocklist"] = data.pop("blacklist")
 
     return post_process(data), 200
 
-@bp.route('/event/id/<evid>', methods=['GET'])
+
+@bp.route("/event/id/<evid>", methods=["GET"])
 def json_event_by_id(evid):
+    nested = request.args.get("nested", "false").lower() == "true"
     try:
         es = getElastic()
         validate_event_id(evid)
-        pending = es.getEventById(evid)
+
+        pending = es.get_event_by_id(evid, nested)
         return post_process(pending), 200
 
     except elasticsearch.exceptions.NotFoundError:
-        return handle_exception('The requested event was not found', 404)
-    
+        return handle_exception("The requested event was not found", 404)
+
     except ValidationError as v:
         return handle_exception(v.args[0], 400)
-    
+
     except Exception as e:
         return handle_exception(e.args[0], 500)
 
-@bp.route('/events', methods=['GET'])
+
+@bp.route("/events", methods=["GET"])
 def json_search_events():
     args = request.args
 
@@ -102,48 +116,53 @@ def json_search_events():
     pending = es.lookupEvents(args)
     return post_process(pending), 200
 
-@bp.route('/pfx_event/id/<evid>/<prefix>', methods=['GET'])
+
+@bp.route("/pfx_event/id/<evid>/<prefix>", methods=["GET"])
 def json_pfx_event_by_id(evid, prefix):
+    nested = request.args.get("nested", "false").lower() == "true"
+
     try:
         es = getElastic()
         validate_event_id(evid)
-        fullev = es.getEventById(evid)
+        fullev = es.get_event_by_id(evid, nested)
 
         replaced = prefix.replace("-", "/")
         search = replaced.split("_")
-        
+
         for prefix_addr in search:
             # Validating IP addresses, this line will throw a ValueError
             # If IP prefix validation fails
             _ = ip_network(prefix_addr)
 
-        if fullev['event_type'] in ['moas', 'edges']:
+        if fullev["event_type"] in ["moas", "edges"]:
             if len(search) != 1:
                 err_str = f"{fullev['event_type']} must only have one prefix in the fingerprint for a pfx_event!"
                 raise ValidationError(err_str)
-            
-            for p in fullev['pfx_events']:
-                if p['details']['prefix'] == search[0]:
+
+            for p in fullev["pfx_events"]:
+                if p["details"]["prefix"] == search[0]:
                     return post_process(p), 200
 
-        elif fullev['event_type'] in ['defcon', 'submoas']:
+        elif fullev["event_type"] in ["defcon", "submoas"]:
 
             if len(search) != 2:
                 err_str = f"{fullev['event_type']} must have two prefixes (sub-pfx and super-pfx) in the fingerprint for a pfx_event!"
                 raise ValidationError(err_str)
-            
-            for p in fullev['pfx_events']:
-                if p['details']['sub_pfx'] == search[0]:
-                    if p['details']['super_pfx'] == search[1]:
+
+            for p in fullev["pfx_events"]:
+                if p["details"]["sub_pfx"] == search[0]:
+                    if p["details"]["super_pfx"] == search[1]:
                         return post_process(p), 200
 
-        return handle_exception('No events with the given search parameters were found', 404)
-    
+        return handle_exception(
+            "No events with the given search parameters were found", 404
+        )
+
     except ValidationError as v:
         return handle_exception(v.args[0], 400)
 
     except elasticsearch.exceptions.NotFoundError:
-        return handle_exception('The requested event was not found', 404)
+        return handle_exception("The requested event was not found", 404)
 
     except ValueError as val:
         return handle_exception("One or more invalid IP prefixes: " + val.args[0], 400)
