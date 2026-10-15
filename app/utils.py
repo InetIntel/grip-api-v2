@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 from flask import jsonify, make_response
 
 from app.GripException import ValidationError
@@ -12,6 +13,21 @@ def handle_exception(message_str, status_code):
 def post_process(data):
     data['copyright'] = COPYRIGHT_STRING
     return jsonify(data)
+
+def nest_tags(tag_list):
+    tag_families = defaultdict(list)
+
+    # The groupings for tag_families are based on the
+    # irr-[IRR]-[common_suffix] families of tags
+    for tag in tag_list:
+        tag_name = tag['name']
+        if tag_name.startswith("irr-"):
+            tag_suffix = tag_name.split("-", 2)[-1]
+            tag_families[tag_suffix].append(tag)
+        else:
+            tag_families["other"].append(tag)
+
+    return tag_families
 
 def is_valid_past_timestamp(timestamp:str):
     timestamp = int(timestamp)
