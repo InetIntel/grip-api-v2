@@ -31,7 +31,7 @@ def nest_tags(tag_list):
             else:
                 tag_families["other"].append(tag)
         else:
-            # Handle non-"irr-" tags if they can exist
+            # Handle non-"irr-" tags
             tag_families["other"].append(tag)
 
     return tag_families
