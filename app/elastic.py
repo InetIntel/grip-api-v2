@@ -344,7 +344,7 @@ class ElasticSearchConn(object):
 
             for tag in tag_list:
                 if tag['name'].startswith("irr-"):
-                    tag_suffix = tag.split("-", 2)[-1]
+                    tag_suffix = tag['name'].split("-", 2)[-1]
                     tag_families[tag_suffix].append(tag)
                 else:
                     tag_families["other"].append(tag)
