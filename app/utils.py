@@ -2,6 +2,7 @@ import time
 from collections import defaultdict
 from flask import jsonify, make_response
 
+from app.config.nested_tag_descriptions import NESTED_TAG_DICT
 from app.GripException import ValidationError
 
 COPYRIGHT_STRING = f"This data is Copyright (c) 2021-{time.strftime('%Y')} Georgia Tech Research Corporation. All Rights Reserved. This data is provided for academic and educational use only; commercial use and bulk scraping are prohibited. Your use of this API is subject to our Acceptable Use Policy which can be found at https://grip.inetintel.cc.gatech.edu/aup/"
@@ -15,16 +16,22 @@ def post_process(data):
     return jsonify(data)
 
 def nest_tags(tag_list):
-    tag_families = defaultdict(list)
+    tag_families = defaultdict(list, {family: [] for family in NESTED_TAG_DICT})
 
-    # The groupings for tag_families are based on the
-    # irr-[IRR]-[common_suffix] families of tags
     for tag in tag_list:
         tag_name = tag['name']
         if tag_name.startswith("irr-"):
-            tag_suffix = tag_name.split("-", 2)[-1]
-            tag_families[tag_suffix].append(tag)
+            tag_family = next(
+                (family for family in tag_families
+                 if tag_name.endswith(f"-{family}")),
+                None
+            )
+            if tag_family:
+                tag_families[tag_family].append(tag)
+            else:
+                tag_families["other"].append(tag)
         else:
+            # Handle non-"irr-" tags if they can exist
             tag_families["other"].append(tag)
 
     return tag_families

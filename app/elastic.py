@@ -38,11 +38,12 @@
 # academic research and education purposes is subject to the conditions and
 # copyright notices in the source code files and in the included LICENSE file.
 
-from elasticsearch import Elasticsearch
 from datetime import datetime
 
-import re, time
+import re
+import time
 
+from elasticsearch import Elasticsearch
 from flask import current_app, g
 
 from app.GripException import ValidationError
@@ -51,22 +52,27 @@ from app.utils import nest_tags
 OLD_TIME_FMT="^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$"
 NEW_TIME_FMT="^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
 
-DEFAULT_ES_INDEX_BASE="observatory-v4-query-events"
-# convert a time parameter into a standard format
-#
-# input may be either a number of seconds or milliseconds since the epoch,
-# or it can be a rfc3339 formatted string (assuming UTC time zone)
-#
-# Allowed input formats:
-#   - 2020-04-09T23:52
-#   - 2020-04-09 23:52:00
-#   - 15864763620000
-#   - 15864763620
-#
-# All of the above inputs will be converted into:
-#   - 2020-04-09 23:52:00
-#
 def convert_time_str(ts_str):
+    """
+    Convert a time parameter into a standard format
+
+    Input: 
+    A string that may be either 
+     * a number of seconds since the epoch,
+     * a number of milliseconds since the epoch, or
+     * a rfc3339 formatted string (assuming UTC time zone)
+
+    Allowed input formats:
+    - 2020-04-09T23:52
+    - 2020-04-09 23:52:00
+    - 15864763620000
+    - 15864763620
+
+    Output:
+    All of the above inputs will be converted into:
+    - 2020-04-09 23:52:00
+
+    """
     if re.match(NEW_TIME_FMT, ts_str):
         return ts_str
 
