@@ -50,6 +50,7 @@ from app.GripException import ValidationError
 OLD_TIME_FMT="^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$"
 NEW_TIME_FMT="^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
 
+DEFAULT_ES_INDEX_BASE="observatory-v4-query-events"
 # convert a time parameter into a standard format
 #
 # input may be either a number of seconds or milliseconds since the epoch,
@@ -200,6 +201,12 @@ def buildESEventQuery(queryparams):
             }
     } )
 
+
+    primary_inference_id = queryparams.get("inference_id", type=str)
+    if primary_inference_id is not None:
+        add_match_params(must_terms, must_not_terms,
+                "summary.inference_result.primary_inference.inference_id", primary_inference_id)
+
     max_dur = queryparams.get("max_duration", type=int)
     min_dur = queryparams.get("min_duration", type=int)
 
@@ -298,12 +305,13 @@ def remove_extra_event_detail(event):
     return ev
 
 class ElasticSearchConn(object):
-    def __init__(self, nodes, api_key_id, api_key_secret):
+    def __init__(self, nodes, api_key_id, api_key_secret,
+            index_base=DEFAULT_ES_INDEX_BASE):
         self.es = Elasticsearch(nodes,
                 timeout=30, max_retries=5, retry_on_timeout=True,
                 use_ssl=True, verify_certs=False, ssl_show_warn=False,
                 api_key=(api_key_id, api_key_secret))
-
+        self.index_base = index_base
         if not self.es.ping():
             raise ValueError("Failed to connect to ElasticSearch")
 
@@ -322,8 +330,7 @@ class ElasticSearchConn(object):
             err_str = "Invalid timestamp in event ID -- should be a unix timestamp"
             raise ValidationError(err_str)
 
-        indexname = "observatory-v4-query-events-{}-{}".format(
-                evtype, datestr)
+        indexname = "{}-{}-{}".format(self.index_base, evtype, datestr)
         result = self.es.get(index=indexname, id=evid)
         event = enhance_pfxevents_for_event(result['_source'])
         return event
@@ -341,10 +348,10 @@ class ElasticSearchConn(object):
         debug = queryparams.get("debug")
         full = queryparams.get("full")
 
-        if debug is not None:
+        if debug is not None and self.index_base == DEFAULT_ES_INDEX_BASE:
             index = "observatory-v4-test-events-{}-*".format(event_type)
         else:
-            index = "observatory-v4-query-events-{}-*".format(event_type)
+            index = "{}-{}-*".format(self.index_base, event_type)
 
         kwargs = {'from': start, 'size': size,
                 'sort': "view_ts:desc"}
@@ -382,5 +389,6 @@ def getElastic():
     if 'es' not in g:
         g.es = ElasticSearchConn(current_app.config['ES_NODES'],
                 current_app.config['ES_API_KEY_ID'],
-                current_app.config['ES_API_KEY_SECRET'])
+                current_app.config['ES_API_KEY_SECRET'],
+                current_app.config['ES_INDEX_BASE'])
     return g.es
