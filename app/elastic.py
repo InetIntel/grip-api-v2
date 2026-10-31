@@ -338,7 +338,7 @@ class ElasticSearchConn(object):
             err_str = "Invalid timestamp in event ID -- should be a unix timestamp"
             raise ValidationError(err_str)
 
-        indexname = "{}-{}-{}".format(self.index_base, evtype, datestr)
+        indexname = f"{self.index_base}-{event_type}-{date_str}"
         result = self.es.get(index=indexname, id=event_id)
         event_response = enhance_pfxevents_for_event(result['_source'])
 
