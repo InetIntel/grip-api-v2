@@ -51,6 +51,7 @@ from app.utils import nest_tags
 
 OLD_TIME_FMT="^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$"
 NEW_TIME_FMT="^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
+DEFAULT_ES_INDEX_BASE="observatory-v4-query-events"
 
 def convert_time_str(ts_str):
     """
