@@ -1,6 +1,8 @@
 import time
+from collections import defaultdict
 from flask import jsonify, make_response
 
+from app.config.nested_tag_descriptions import NESTED_TAG_DICT
 from app.GripException import ValidationError
 
 COPYRIGHT_STRING = f"This data is Copyright (c) 2021-{time.strftime('%Y')} Georgia Tech Research Corporation. All Rights Reserved. This data is provided for academic and educational use only; commercial use and bulk scraping are prohibited. Your use of this API is subject to our Acceptable Use Policy which can be found at https://grip.inetintel.cc.gatech.edu/aup/"
@@ -12,6 +14,30 @@ def handle_exception(message_str, status_code):
 def post_process(data):
     data['copyright'] = COPYRIGHT_STRING
     return jsonify(data)
+
+def nest_tags(tag_list):
+    tag_families = defaultdict(list, {family: [] for family in NESTED_TAG_DICT})
+
+    for tag in tag_list:
+        tag_name = tag['name']
+        if tag_name.startswith("irr-"):
+            tag_family = next(
+                (
+                    family
+                    for family in NESTED_TAG_DICT
+                    if tag_name.endswith(f"-{family}")
+                    and tag_name != f"irr-{family}"
+                ),
+                None,
+            )
+            if tag_family:
+                tag_families[tag_family].append(tag)
+            else:
+                tag_families["other"].append(tag)
+        else:
+            tag_families["other"].append(tag)
+
+    return tag_families
 
 def is_valid_past_timestamp(timestamp:str):
     timestamp = int(timestamp)
