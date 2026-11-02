@@ -107,7 +107,6 @@ def add_match_params(must_terms, must_not_terms, termname, paramstring):
 
 
 def buildESEventQuery(queryparams):
-    q = {}
 
     start_ts = queryparams.get("ts_start", type=str)
     end_ts = queryparams.get("ts_end", type=str)

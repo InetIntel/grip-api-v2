@@ -22,16 +22,19 @@ def nest_tags(tag_list):
         tag_name = tag['name']
         if tag_name.startswith("irr-"):
             tag_family = next(
-                (family for family in tag_families
-                 if tag_name.endswith(f"-{family}")),
-                None
+                (
+                    family
+                    for family in NESTED_TAG_DICT
+                    if tag_name.endswith(f"-{family}")
+                    and tag_name != f"irr-{family}"
+                ),
+                None,
             )
             if tag_family:
                 tag_families[tag_family].append(tag)
             else:
                 tag_families["other"].append(tag)
         else:
-            # Handle non-"irr-" tags
             tag_families["other"].append(tag)
 
     return tag_families
